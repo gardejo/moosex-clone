@@ -43,7 +43,12 @@ use Scalar::Util qw(refaddr);
         is     => "rw",
     );
 
-    package Foo;
+    has baz => (
+        traits => [qw(DataClone)],
+        is     => "rw",
+    );
+
+    package FooBase;
     use Moose;
 
     has copy_number => (
@@ -53,6 +58,11 @@ use Scalar::Util qw(refaddr);
     );
 
     has some_attr => ( is => "rw", default => "def" );
+
+    package Foo;
+    use Moose;
+
+    extends qw(FooBase);
 
     sub clone {
         my ( $self, %params ) = @_;
@@ -119,4 +129,20 @@ is( $copy->clone( foo => { some_attr => "laaa" } )->foo->some_attr, "laaa", "Val
 
     isnt( refaddr($foo), refaddr($foo_copy), "foo copied" );
     is( $foo_copy->copy_number, $foo->copy_number, "but not using ->clone");
+}
+
+{
+    my $foo = FooBase->new;
+    my $foo_copy = Bar->new( baz => $foo )->clone->baz;
+
+    is( refaddr($foo), refaddr($foo_copy), "foo copied surfacely" );
+    is( $foo_copy->copy_number, $foo->copy_number, "not incremented for uncloned attr" );
+}
+
+{
+    my $foo = Foo->new;
+    my $foo_copy = Bar->new( baz => $foo )->clone->baz;
+
+    isnt( refaddr($foo), refaddr($foo_copy), "foo copied" );
+    is( $foo_copy->copy_number, 1, "using ->clone" );
 }
