@@ -131,18 +131,23 @@ is( $copy->clone( foo => { some_attr => "laaa" } )->foo->some_attr, "laaa", "Val
     is( $foo_copy->copy_number, $foo->copy_number, "but not using ->clone");
 }
 
-{
-    my $foo = FooBase->new;
-    my $foo_copy = Bar->new( baz => $foo )->clone->baz;
+SKIP: {
+    eval { require Data::Clone; };
+    skip ('Data::Clone required for testing deeply cloning attributes using Data::Clone::clone()', 4) if $@;
 
-    is( refaddr($foo), refaddr($foo_copy), "foo copied surfacely" );
-    is( $foo_copy->copy_number, $foo->copy_number, "not incremented for uncloned attr" );
-}
+    {
+        my $foo = FooBase->new;
+        my $foo_copy = Bar->new( baz => $foo )->clone->baz;
 
-{
-    my $foo = Foo->new;
-    my $foo_copy = Bar->new( baz => $foo )->clone->baz;
+        is( refaddr($foo), refaddr($foo_copy), "foo copied surfacely" );
+        is( $foo_copy->copy_number, $foo->copy_number, "not incremented for uncloned attr" );
+    }
 
-    isnt( refaddr($foo), refaddr($foo_copy), "foo copied" );
-    is( $foo_copy->copy_number, 1, "using ->clone" );
+    {
+        my $foo = Foo->new;
+        my $foo_copy = Bar->new( baz => $foo )->clone->baz;
+
+        isnt( refaddr($foo), refaddr($foo_copy), "foo copied" );
+        is( $foo_copy->copy_number, 1, "using ->clone" );
+    }
 }
